@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
@@ -26,17 +26,30 @@ type Quote struct {
 
 // QuoteServer sets up the quote server
 type QuoteServer struct {
-	db    *xorm.Engine
-	redis redis.Conn
+	db       *xorm.Engine
+	redis    redis.Conn
+	authaddr string
 }
 
 // NewQuoteServer is a constructor for QuoteServer
-func NewQuoteServer(db *xorm.Engine, redisConn redis.Conn) *QuoteServer {
-	return &QuoteServer{db: db, redis: redisConn}
+func NewQuoteServer(db *xorm.Engine, redisConn redis.Conn, authaddr string) *QuoteServer {
+	return &QuoteServer{db: db, redis: redisConn,
+		authaddr: strings.TrimSuffix(authaddr, "/")}
 }
 
 // GetQuoteHandler is the handler that returns the quotes
 func (s *QuoteServer) GetQuoteHandler(w http.ResponseWriter, r *http.Request) {
+	key := r.Header.Get("x-auth-token")
+	authed, err := s.Authenticate(key)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if !authed {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	quoteID, err := strconv.ParseInt(vars["quoteID"], 10, 64)
 	if err != nil {
@@ -70,6 +83,15 @@ func (s *QuoteServer) returnQuoteByID(w http.ResponseWriter, quoteID int64) {
 // seen so far and returns one that hasn't been seen lately
 func (s *QuoteServer) GetRandomQuoteHandler(w http.ResponseWriter, r *http.Request) {
 	key := r.Header.Get("x-auth-token")
+	authed, err := s.Authenticate(key)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if !authed {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
 	// watch/get/multi/exec - loop until success
 	// see example at https://github.com/garyburd/redigo/blob/master/redis/zpop_example_test.go
@@ -130,13 +152,23 @@ func (s *QuoteServer) GetRandomQuoteHandler(w http.ResponseWriter, r *http.Reque
 	s.returnQuoteByID(w, quoteID)
 }
 
-// // Authenticate returns true if the request is authenticated, false else
-// func (s *QuoteServer) Authenticate(authToken string) (bool, error) {
-// 	if authToken == "" {
-// 		return false, nil
-// 	}
-// 	return true, nil
-// }
+// Authenticate returns true if the request is authenticated, false else
+func (s *QuoteServer) Authenticate(authToken string) (bool, error) {
+	if authToken == "" {
+		return false, nil
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/token/%s",
+		s.authaddr, authToken), nil)
+	if err != nil {
+		return false, err
+	}
+	resp, err := http.DefaultTransport.RoundTrip(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode == http.StatusOK, nil
+}
 
 // ServerHandlers returns HTTP handlers for the server
 func (s *QuoteServer) ServerHandlers() http.Handler {
@@ -153,15 +185,14 @@ func fatalf(formatString string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func setupSQlite(dbdir string) (*xorm.Engine, error) {
-	engine, err := xorm.NewEngine("sqlite3", filepath.Join(dbdir, "db"))
+func setupSQL(dbtype, dbsource string) (*xorm.Engine, error) {
+	engine, err := xorm.NewEngine(dbtype, dbsource)
 	if err != nil {
 		return nil, err
 	}
 	err = engine.CreateTables(&Quote{})
 	if err != nil {
 		engine.Close()
-		os.Remove(filepath.Join(dbdir, "db"))
 		return nil, err
 	}
 	return engine, nil
