@@ -28,5 +28,5 @@ func NewAuthHandler(goodTokens []string) http.Handler {
 
 func main() {
 	flag.Parse()
-	http.ListenAndServe(":8080", NewAuthHandler(flag.Args()))
+	http.ListenAndServe(":8081", NewAuthHandler(flag.Args()))
 }

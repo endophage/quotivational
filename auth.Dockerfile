@@ -1,6 +1,6 @@
 FROM golang:1.6.0-alpine
 
-EXPOSE 8080
+EXPOSE 8081
 
 COPY . /go/src/quotivational
 
