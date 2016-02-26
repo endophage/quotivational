@@ -29,6 +29,72 @@
 			"ImportPath": "github.com/gotk3/gotk3/pango",
 			"Comment": "GOTK3_0_2_0-397-gcd3b18d",
 			"Rev": "cd3b18dbd8a2646f6adb4051c7e32a97ea7ab73a"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/internal",
+			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/redis",
+			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
+		},
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-97-g0cc29e9",
+			"Rev": "0cc29e9fe8e25c2c58cf47bcab566e029bbaa88b"
+		},
+		{
+			"ImportPath": "github.com/go-xorm/core",
+			"Comment": "v0.4.4-7-g9e608f7",
+			"Rev": "9e608f7330b9d16fe2818cfe731128b3f156cb9a"
+		},
+		{
+			"ImportPath": "github.com/go-xorm/xorm",
+			"Comment": "v0.4.4-44-gf561133",
+			"Rev": "f56113384f2c63dfe4cd8e768e349f1c35122b58"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "14f550f51af52180c2eefed15e5fd18d63c0a64a"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Rev": "e444e69cbd2e2e3e0749a2f3c717cec491552bbf"
+		},
+		{
+			"ImportPath": "github.com/gotk3/gotk3/cairo",
+			"Comment": "GOTK3_0_2_0-434-g630caee",
+			"Rev": "630caee13b27db1b1643b85de71ad4dc524d3843"
+		},
+		{
+			"ImportPath": "github.com/gotk3/gotk3/gdk",
+			"Comment": "GOTK3_0_2_0-434-g630caee",
+			"Rev": "630caee13b27db1b1643b85de71ad4dc524d3843"
+		},
+		{
+			"ImportPath": "github.com/gotk3/gotk3/glib",
+			"Comment": "GOTK3_0_2_0-434-g630caee",
+			"Rev": "630caee13b27db1b1643b85de71ad4dc524d3843"
+		},
+		{
+			"ImportPath": "github.com/gotk3/gotk3/gtk",
+			"Comment": "GOTK3_0_2_0-434-g630caee",
+			"Rev": "630caee13b27db1b1643b85de71ad4dc524d3843"
+		},
+		{
+			"ImportPath": "github.com/gotk3/gotk3/pango",
+			"Comment": "GOTK3_0_2_0-434-g630caee",
+			"Rev": "630caee13b27db1b1643b85de71ad4dc524d3843"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-sqlite3",
+			"Comment": "v1.0.0",
+			"Rev": "b4142c444a8941d0d92b0b7103a24df9cd815e42"
+		},
+		{
+			"ImportPath": "github.com/rafaeljusto/redigomock",
+			"Comment": "v1.0-41-g4e848f8",
+			"Rev": "4e848f835b81c67264868400e9b5cde3038e9d14"
 		}
 	]
 }

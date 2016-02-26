@@ -2,14 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
@@ -18,8 +19,8 @@ import (
 // Quote encapsulates a quote
 type Quote struct {
 	ID      int64     `xorm:"id"`
-	Text    string    `xorm:"text not null"`
-	Author  string    `xorm:"varchar(255) not null"`
+	Text    string    `xorm:"text"`
+	Author  string    `xorm:"author"`
 	Created time.Time `xorm:"created"`
 	Updated time.Time `xorm:"updated"`
 }
@@ -42,10 +43,12 @@ func (s *QuoteServer) GetQuoteHandler(w http.ResponseWriter, r *http.Request) {
 	key := r.Header.Get("x-auth-token")
 	authed, err := s.Authenticate(key)
 	if err != nil {
+		fmt.Println("error authenticating: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !authed {
+		fmt.Println("unauthorized: ", key)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -75,6 +78,7 @@ func (s *QuoteServer) returnQuoteByID(w http.ResponseWriter, quoteID int64) {
 	case err == nil:
 		w.WriteHeader(http.StatusNotFound)
 	default:
+		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
@@ -85,10 +89,12 @@ func (s *QuoteServer) GetRandomQuoteHandler(w http.ResponseWriter, r *http.Reque
 	key := r.Header.Get("x-auth-token")
 	authed, err := s.Authenticate(key)
 	if err != nil {
+		fmt.Println("error authenticating: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !authed {
+		fmt.Println("unauthorized: ", key)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -180,11 +186,6 @@ func (s *QuoteServer) ServerHandlers() http.Handler {
 	return r
 }
 
-func fatalf(formatString string, args ...interface{}) {
-	fmt.Printf(formatString, args...)
-	os.Exit(1)
-}
-
 func setupSQL(dbtype, dbsource string) (*xorm.Engine, error) {
 	engine, err := xorm.NewEngine(dbtype, dbsource)
 	if err != nil {
@@ -198,10 +199,38 @@ func setupSQL(dbtype, dbsource string) (*xorm.Engine, error) {
 	return engine, nil
 }
 
-// func main() {
-// 	engine, _, err := setupSQlite()
-// 	if err != nil {
-// 		fatalf(err.Error())
-// 	}
-// 	q := QuoteServer{db: engine}
-// }
+func main() {
+	var mysqldb = flag.String("db", "", "The DB source")
+	var redisAddr = flag.String("redis", "", "Where Redis is")
+	var authserver = flag.String("auth", "", "Where the auth server is")
+
+	flag.Parse()
+
+	var engine *xorm.Engine
+	var redisConn redis.Conn
+	var err error
+
+	for {
+		if engine == nil {
+			engine, err = setupSQL("mysql", *mysqldb)
+			if err != nil {
+				fmt.Println(err.Error())
+				time.Sleep(5 * time.Second)
+				continue
+			}
+		}
+
+		redisConn, err = redis.Dial("tcp", *redisAddr)
+		if err == nil {
+			break
+		}
+		fmt.Println(err.Error())
+		time.Sleep(5 * time.Second)
+	}
+	defer engine.Close()
+	defer redisConn.Close()
+
+	q := NewQuoteServer(engine, redisConn, *authserver)
+	fmt.Println("Starting server")
+	http.ListenAndServe(":8080", q.ServerHandlers())
+}
