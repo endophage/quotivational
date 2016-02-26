@@ -1,0 +1,34 @@
+{
+	"ImportPath": "github.com/endophage/quotivational",
+	"GoVersion": "go1.6",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/gotk3/gotk3/cairo",
+			"Comment": "GOTK3_0_2_0-397-gcd3b18d",
+			"Rev": "cd3b18dbd8a2646f6adb4051c7e32a97ea7ab73a"
+		},
+		{
+			"ImportPath": "github.com/gotk3/gotk3/gdk",
+			"Comment": "GOTK3_0_2_0-397-gcd3b18d",
+			"Rev": "cd3b18dbd8a2646f6adb4051c7e32a97ea7ab73a"
+		},
+		{
+			"ImportPath": "github.com/gotk3/gotk3/glib",
+			"Comment": "GOTK3_0_2_0-397-gcd3b18d",
+			"Rev": "cd3b18dbd8a2646f6adb4051c7e32a97ea7ab73a"
+		},
+		{
+			"ImportPath": "github.com/gotk3/gotk3/gtk",
+			"Comment": "GOTK3_0_2_0-397-gcd3b18d",
+			"Rev": "cd3b18dbd8a2646f6adb4051c7e32a97ea7ab73a"
+		},
+		{
+			"ImportPath": "github.com/gotk3/gotk3/pango",
+			"Comment": "GOTK3_0_2_0-397-gcd3b18d",
+			"Rev": "cd3b18dbd8a2646f6adb4051c7e32a97ea7ab73a"
+		}
+	]
+}
