@@ -16,7 +16,7 @@ auth:
   command: user1 user2
 mysql:
   volumes:
-    - ./mysqlsetup:/docker-entrypoint-initdb.d
+    - ./mysqlsetup:/docker-entrypoint-initdb.d/
   image: mariadb:10.1.10
   ports:
     - "3306:3306"

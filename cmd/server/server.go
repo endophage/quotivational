@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -18,11 +17,12 @@ import (
 
 // Quote encapsulates a quote
 type Quote struct {
-	ID      int64     `xorm:"id"`
+	ID      int64     `xorm:"id" json:"-"`
+	Topic   string    `xorm:"topic"`
 	Text    string    `xorm:"text"`
 	Author  string    `xorm:"author"`
-	Created time.Time `xorm:"created"`
-	Updated time.Time `xorm:"updated"`
+	Created time.Time `xorm:"created" json:"-"`
+	Updated time.Time `xorm:"updated" json:"-"`
 }
 
 // QuoteServer sets up the quote server
@@ -54,16 +54,14 @@ func (s *QuoteServer) GetQuoteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-	quoteID, err := strconv.ParseInt(vars["quoteID"], 10, 64)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-	}
-	s.returnQuoteByID(w, quoteID)
+	topic := vars["topic"]
+	topic = strings.ToLower(topic)
+	s.returnQuoteByTopic(w, topic)
 }
 
-func (s *QuoteServer) returnQuoteByID(w http.ResponseWriter, quoteID int64) {
+func (s *QuoteServer) returnQuoteByTopic(w http.ResponseWriter, topic string) {
 	quote := &Quote{}
-	has, err := s.db.Id(quoteID).Get(quote)
+	has, err := s.db.Where("topic = ?", topic).OrderBy("RAND()").Get(quote)
 
 	if has && err == nil {
 		var result []byte
@@ -99,63 +97,24 @@ func (s *QuoteServer) GetRandomQuoteHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// watch/get/multi/exec - loop until success
-	// see example at https://github.com/garyburd/redigo/blob/master/redis/zpop_example_test.go
-	quoteID, err := redis.Int64(s.redis.Do("SPOP", key))
-	if err == redis.ErrNil {
-		// no more elements left in the set, so start over from the
-		// beginning - we want to return the first quote but also
-		// repopulate the cache with all the quote IDs
-		defer func() {
-			// Return connection to normal state on error.
-			if err != nil {
-				s.redis.Do("DISCARD")
-			}
-		}()
-
-		var queued interface{}
-		for {
-			if err = s.redis.Send("WATCH", key); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			q := []Quote{}
-			err := s.db.Desc("ID").Find(&q)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			if len(q) == 0 {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-
-			maxID := q[0].ID
-			minID := q[len(q)-1].ID
-
-			s.redis.Send("MULTI")
-			for i := minID + 1; i <= maxID; i++ {
-				s.redis.Send("SADD", key, i)
-			}
-
-			queued, err = s.redis.Do("EXEC")
-			if err != nil && err != redis.ErrNil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			if queued != nil {
-				quoteID = minID
-				break
-			}
+	quote := &Quote{}
+	has, err := s.db.OrderBy("RAND()").Get(quote)
+	if has && err == nil {
+		var result []byte
+		result, err = json.Marshal(quote)
+		if err == nil {
+			w.Write(result)
+			w.WriteHeader(http.StatusOK)
+			return
 		}
-	} else if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
-
-	s.returnQuoteByID(w, quoteID)
+	switch {
+	case err == nil:
+		w.WriteHeader(http.StatusNotFound)
+	default:
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 // Authenticate returns true if the request is authenticated, false else
@@ -179,7 +138,7 @@ func (s *QuoteServer) Authenticate(authToken string) (bool, error) {
 // ServerHandlers returns HTTP handlers for the server
 func (s *QuoteServer) ServerHandlers() http.Handler {
 	r := mux.NewRouter()
-	r.Methods("GET").Path("/quotes/{quoteID:[0-9]+}").Handler(
+	r.Methods("GET").Path("/quotes/{topic:[a-zA-Z0-9]+}").Handler(
 		http.HandlerFunc(s.GetQuoteHandler))
 	r.Methods("GET").Path("/randomquote").Handler(
 		http.HandlerFunc(s.GetRandomQuoteHandler))
