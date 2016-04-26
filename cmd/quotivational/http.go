@@ -14,11 +14,13 @@ const (
 	topicPath  = "/quotes/%s"
 )
 
+// HTTPQuoter gets a quote from a quote server
 type HTTPQuoter struct {
 	url   url.URL
 	token string
 }
 
+// NewHTTPQuoter returns a HTTPQuoter instance
 func NewHTTPQuoter(baseURL string, authToken string) (*HTTPQuoter, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
@@ -30,6 +32,7 @@ func NewHTTPQuoter(baseURL string, authToken string) (*HTTPQuoter, error) {
 	}, nil
 }
 
+// Quote gets a quote of a particular topic
 func (h HTTPQuoter) Quote(topic string) (*Quote, error) {
 	u, err := h.url.Parse(
 		fmt.Sprintf(topicPath, topic),
