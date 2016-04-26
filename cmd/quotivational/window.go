@@ -32,7 +32,7 @@ func setupMenuBar(g *gtk.Grid) error {
 	}
 
 	topicList, err := gtk.MenuNew()
-	for t, _ := range quotes {
+	for _, t := range allTopics {
 		s, err := gtk.MenuItemNewWithLabel(t)
 		if err != nil {
 			return err
@@ -86,7 +86,10 @@ func setupWidgets(w *gtk.Window) error {
 	b.SetMarginStart(50)
 	b.SetMarginEnd(50)
 	b.SetMarginBottom(30)
-	q := MockQuoter{}
+	q, err := NewHTTPQuoter("http://localhost:8080", "user1")
+	if err != nil {
+		return err
+	}
 	b.Connect("clicked", func() {
 		s, err := q.Quote(topic)
 		if err != nil {
