@@ -7,7 +7,7 @@ import (
 )
 
 func makeRequest(t *testing.T, baseURL, token string, expected int) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", baseURL+"/token/"+token, nil)
 	if err != nil {
 		t.Fatalf("expected no error setting up a request: %s", err)
 	}
